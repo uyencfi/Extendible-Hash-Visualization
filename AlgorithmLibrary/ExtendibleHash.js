@@ -283,13 +283,18 @@ EH.prototype.split = function(bucket) {
 
 	this.cmd("Step");
 	// Since entries may have moved, "compress" the entries in the old bucket
-	for (let i = 0; i < newData.length; i++) {
-		this.cmd("SetText", bucket.graphicId, newData[i], i);
+	if (newBucket.data.length === 0) {
+		this.setExplain("No entries redistributed!")
+	} 
+	else {
+		for (let i = 0; i < newData.length; i++) {
+			this.cmd("SetText", bucket.graphicId, newData[i], i);
+		}
+		for (let j = newData.length; j < bucket.capacity; j++) {
+			this.cmd("SetText", bucket.graphicId, "", j);
+		}
+		this.cmd("Step");
 	}
-	for (let j = newData.length; j < bucket.capacity; j++) {
-		this.cmd("SetText", bucket.graphicId, "", j);
-	}
-	this.cmd("Step");
 
 	this.cmd("SetHighlight", bucket.graphicId, 0);
 	this.cmd("SetHighlight", newBucket.graphicId, 0);
