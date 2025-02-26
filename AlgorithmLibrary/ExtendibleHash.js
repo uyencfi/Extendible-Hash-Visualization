@@ -24,6 +24,26 @@
 // authors and should not be interpreted as representing official policies, either expressed
 // or implied, of the University of San Francisco
 
+const MIN_BUCKET_CAPACITY = 2;
+
+
+const DIRECTORY_X_START = 200;
+const DIRECTORY_Y_START = 40;
+
+const DIRECTORY_WIDTH = 30;
+const DIRECTORY_HEIGHT = 25;
+
+const SPACING = 250;
+
+const BUCKET_X_START = DIRECTORY_X_START + DIRECTORY_WIDTH + SPACING;
+const BUCKET_Y_START = DIRECTORY_Y_START;
+
+const BUCKET_WIDTH_PER_ENTRY = 50;
+const BUCKET_HEIGHT = DIRECTORY_HEIGHT - 5;
+
+const COLOR_BLUE = "#0000FF";
+const COLOR_BLACK = "#000000";
+
 function EH(am, w, h)
 {
 	this.init(am, w, h);
@@ -47,27 +67,9 @@ EH.prototype.init = function(am, w, h)
 	this.setup();
 }
 
-const DIRECTORY_X_START = 200;
-const DIRECTORY_Y_START = 40;
-
-const DIRECTORY_WIDTH = 30;
-const DIRECTORY_HEIGHT = 25;
-
-const SPACING = 250;
-
-const BUCKET_X_START = DIRECTORY_X_START + DIRECTORY_WIDTH + SPACING;
-const BUCKET_Y_START = DIRECTORY_Y_START;
-
-const BUCKET_WIDTH = 100;
-const BUCKET_HEIGHT = DIRECTORY_HEIGHT - 5;
-
-const COLOR_BLUE = "#0000FF";
-const COLOR_BLACK = "#000000";
-
-
 EH.prototype.setup = function () 
 {
-	this.BUCKET_CAPACITY = 2;		// TODO allow changing bucket capacity
+	this.BUCKET_CAPACITY = MIN_BUCKET_CAPACITY;
 
 	this.explainLabel = this.nextIndex++;
 
@@ -83,9 +85,6 @@ EH.prototype.setup = function ()
 EH.prototype.addControls =  function()
 {
 	this.controls = [];
-	
-	// Add any necessary controls for your algorithm.
-	//   There are libraries that help with text entry, buttons, check boxes, radio groups
 
 	this.insertField = addControlToAlgorithmBar("Text", "");
 	this.insertField.onkeydown = this.returnSubmit(this.insertField,  
@@ -97,6 +96,22 @@ EH.prototype.addControls =  function()
 	this.insertButton = addControlToAlgorithmBar("Button", "Insert");
 	this.insertButton.onclick = this.insertCallback.bind(this);
 	this.controls.push(this.insertButton);
+
+	this.bucketCapacityButtons = addRadioButtonGroupToAlgorithmBar(
+		[
+			"Entries per bucket: 2",		// MIN_BUCKET_CAPACITY
+			"Entries per bucket: 3",
+	 		"Entries per bucket: 4"
+		], 
+		"Entries per bucket");
+	
+	this.bucketCapacityButtons[0].checked = true;		// Default bucket capacity = 2
+	
+	for (i = 0; i < this.bucketCapacityButtons.length; i++) {
+		this.bucketCapacityButtons[i].onclick = 
+					this.bucketCapacityChangedHandler.bind(this, i + MIN_BUCKET_CAPACITY);
+		this.controls.push(this.bucketCapacityButtons[i]);
+	}
 }
 
 
@@ -112,10 +127,66 @@ EH.prototype.reset = function()
 	this.directory = null;
 }
 
+EH.prototype.disableUI = function(event)
+{
+	for (var i = 0; i < this.controls.length; i++)
+	{
+		this.controls[i].disabled = true;
+	}
+}
+
+EH.prototype.enableUI = function(event)
+{
+	for (var i = 0; i < this.controls.length; i++)
+	{
+		this.controls[i].disabled = false;
+	}
+}
+
+EH.prototype.bucketCapacityChangedHandler = function(newCapacity, event) 
+{
+	if (this.BUCKET_CAPACITY != newCapacity)
+	{
+		this.implementAction(this.changeBucketCapacity.bind(this), newCapacity);
+	}
+}
+
+EH.prototype.changeBucketCapacity = function(newCapacity)
+{
+	this.commands = [];
+	this.bucketCapacityButtons[newCapacity - MIN_BUCKET_CAPACITY].checked = true;
+	this.setExplain(`Now storing \n ${newCapacity} entries per bucket`);
+	this.insertField.value = "";
+	this.clearAllGraphics();
+
+	this.BUCKET_CAPACITY = newCapacity;
+	this.directory = null;
+
+	return this.commands;
+}
+
+EH.prototype.clearAllGraphics = function() 
+{
+	if (!this.directory) return;
+
+	for (const bucket of this.directory) {
+		this.cmd("Delete", bucket.graphicId);
+	}
+	for (const dirEntry of this.directoryGraphics) {
+		this.cmd("Delete", dirEntry[0]);
+		this.cmd("Delete", dirEntry[1]);
+	}
+	this.cmd("Delete", this.globalDepthGraphicId);
+}
+
+
 EH.prototype.setExplain = function(text) {
 	this.cmd("SetText", this.explainLabel, text);
 }
 
+EH.prototype.getBucketWidth = function() {
+	return BUCKET_WIDTH_PER_ENTRY * this.BUCKET_CAPACITY;
+}
 
 EH.prototype.insertCallback = function(event)
 {
@@ -242,7 +313,7 @@ EH.prototype.split = function(bucket) {
 	this.setExplain("Split bucket...");
 
 	this.cmd("CreateLinkedList", newBucket.graphicId, "",
-		BUCKET_WIDTH, BUCKET_HEIGHT, 0, 0,
+		this.getBucketWidth(), BUCKET_HEIGHT, 0, 0,
 		0.1,	// % of the linkedlist element width taken up by the outgoing pointer
 		0, 		// false = horizontal list
 		1, 		// pointer to appear at the right of the element
@@ -251,7 +322,7 @@ EH.prototype.split = function(bucket) {
 	this.cmd("SetNull", newBucket.graphicId, 1);
 
 	// Put the split image next to the old bucket
-	this.cmd("SetPosition", newBucket.graphicId, bucket.x + BUCKET_WIDTH + 25, bucket.y);
+	this.cmd("SetPosition", newBucket.graphicId, bucket.x + this.getBucketWidth() + 25, bucket.y);
 	this.cmd("SetHighlight", bucket.graphicId, 1);
 	this.cmd("SetHighlight", newBucket.graphicId, 1);
 	this.cmd("Step");
@@ -378,7 +449,7 @@ EH.prototype.initDirectory = function() {
 	const bucket = new Bucket(this.nextIndex++, 0, this.BUCKET_CAPACITY);
 	this.directory.push(bucket);
 	this.cmd("CreateLinkedList", bucket.graphicId, "",
-		BUCKET_WIDTH, BUCKET_HEIGHT, BUCKET_X_START, BUCKET_Y_START, 
+		this.getBucketWidth(), BUCKET_HEIGHT, BUCKET_X_START, BUCKET_Y_START, 
 		0.1, 	// % of the linkedlist element width taken up by the outgoing pointer
 		0, 	// false = horizontal list
 		1, 	// pointer to appear at the right of the element
@@ -412,27 +483,6 @@ EH.prototype.initDirectory = function() {
  *     End: 		Helper functions 
  * ===========================================
  */
-
-
-// Called by our superclass when we get an animation started event -- need to wait for the
-// event to finish before we start doing anything
-EH.prototype.disableUI = function(event)
-{
-	for (var i = 0; i < this.controls.length; i++)
-	{
-		this.controls[i].disabled = true;
-	}
-}
-
-// Called by our superclass when we get an animation completed event -- we can
-/// now interact again.
-EH.prototype.enableUI = function(event)
-{
-	for (var i = 0; i < this.controls.length; i++)
-	{
-		this.controls[i].disabled = false;
-	}
-}
 
 
 var currentAlg;
