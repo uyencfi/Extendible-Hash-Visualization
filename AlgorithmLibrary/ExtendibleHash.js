@@ -43,7 +43,7 @@ const BUCKET_HEIGHT = DIRECTORY_HEIGHT - 5;
 
 const COLOR_BLUE = "#0000FF";
 const COLOR_BLACK = "#000000";
-const COLOR_GREEN = "#EEFFEE";
+const COLOR_GREEN = "#CDF2B1";
 const COLOR_WHITE = "#FFFFFF";
 
 function EH(am, w, h)
