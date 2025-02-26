@@ -599,11 +599,11 @@ EH.prototype.merge = function(currbucketIndex)
 	}
 
 	if (!targetBucket) {
-		this.setExplain("No more possible bucket merge. Done.");
+		this.setExplain("No more possible bucket merge.\nDone.");
 		return;
 	}
 
-	this.setExplain("Merging with highlighted bucket...");
+	this.setExplain("Can be merged with red bucket...");
 
 	// Collect all directory indices pointing to
 	// the current and target bucket.
@@ -738,7 +738,7 @@ EH.prototype.halveDirectory = function()
 	
 	for (let i = 0; i < halfLength; i++) {
 		if (this.directory[i] !== this.directory[i + halfLength]) {
-			canShrink = false;
+			canHalve = false;
 			break;
 		}
 	}
@@ -754,11 +754,20 @@ EH.prototype.halveDirectory = function()
 		this.cmd("Delete", dirEntryId);
 		this.cmd("Delete", labelId);
 	}
+	// Update global depth label
+	this.cmd("SetText", this.globalDepthGraphicId, `d = ${this.globalDepth - 1}`);
 
-	// Re-number the labels
-	for (let i = 0; i < halfLength; i++) {
-		const labelId = this.directoryGraphics[i][1];
-		this.cmd("SetText", labelId, parseInt(i).toString(2).padStart(this.globalDepth-1, "0"));
+	// Re-number the directory labels
+	if (halfLength === 1) {
+		// when there's only one directory entry left, don't put a label.
+		const firstLabel = this.directoryGraphics[0][1];
+		this.cmd("SetText", firstLabel, "");
+	}
+	else {
+		for (let i = 0; i < halfLength; i++) {
+			const labelId = this.directoryGraphics[i][1];
+			this.cmd("SetText", labelId, parseInt(i).toString(2).padStart(this.globalDepth-1, "0"));
+		}	
 	}
 	this.cmd("Step");
 
@@ -780,6 +789,8 @@ EH.prototype.halveDirectory = function()
 	}
 	this.cmd("Step");
 
+	// Cut directory by half
+	this.directoryGraphics.length = halfLength;
 	this.directory.length = halfLength;
 	this.globalDepth--;
 }
