@@ -9,7 +9,7 @@ The visualization works by using an HTML file for animation, and JavaScript for 
 git clone https://github.com/uyencfi/Extendible-Hash-Visualization.git
 cd Extendible-Hash-Visualization
 ```
-Then open `ExtendibleHash.html` in a browser.
+Then open `index.html` in a browser.
 
 ## Acknowledgement
 This is an extension of the code provided by [Data Structure Visualizations](https://www.cs.usfca.edu/~galles/visualization/about.html).
