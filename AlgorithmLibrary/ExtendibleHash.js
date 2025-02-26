@@ -172,6 +172,7 @@ EH.prototype.changeBucketCapacity = function(newCapacity)
 	this.bucketCapacityButtons[newCapacity - MIN_BUCKET_CAPACITY].checked = true;
 	this.setExplain(`Now storing ${newCapacity} entries per bucket`);
 	this.insertField.value = "";
+	this.deleteField.value = "";
 	this.clearAllGraphics();
 
 	this.BUCKET_CAPACITY = newCapacity;
@@ -185,7 +186,11 @@ EH.prototype.clearAllGraphics = function()
 {
 	if (!this.directory) return;
 
+	var seen = new Set();
 	for (const bucket of this.directory) {
+		if (seen.has(bucket.graphicId)) 
+			continue;
+		seen.add(bucket.graphicId);
 		this.cmd("Delete", bucket.graphicId);
 	}
 	for (const dirEntry of this.directoryGraphics) {
@@ -791,7 +796,7 @@ EH.prototype.clearCallback = function(event)
 	this.implementAction(this.clear.bind(this), "");
 }
 
-EH.prototype.clear = function() 
+EH.prototype.clear = function(ignored) 
 {
 	this.commands = [];
 	this.clearAllGraphics();
