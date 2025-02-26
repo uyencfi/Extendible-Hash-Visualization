@@ -247,7 +247,6 @@ EH.prototype.insertRecursive = function(value)
 	this.toggleHighlight(dirEntryId, bucket.graphicId, 1);
 
 	if (bucket.isFull()) {
-		console.log("oops full!");
 		this.setExplain("Bucket is full");
 		this.toggleHighlight(dirEntryId, bucket.graphicId, 0);
 		
@@ -257,7 +256,6 @@ EH.prototype.insertRecursive = function(value)
 		const newBucket = this.split(bucket);
 		this.redistributePointers(bucketIndex, newBucket);
 
-		console.log("retry insert" + String(value));
 		this.insertRecursive(value); 	// Retry insertion after split
 		return;
 	}
@@ -413,7 +411,6 @@ EH.prototype.redistributePointers = function(oldBucketIndex, newBucket)
 		if ((i & mask) === newBucketBits) {
 			this.directory[i] = newBucket;
 			changedIndices.push(i);
-			console.log(i.toString(2).padStart(4, "0"));
 		}
 	}
 
@@ -520,9 +517,6 @@ EH.prototype.delete = function(value)
 	this.commands = [];
 	if (!this.directory) return this.commands;
 
-	console.log(`START DELETE: ${this.directory}`);
-	console.log(this.directoryGraphics);
-
 	this.setExplain(`Deleting ${value}`);
 
 	const bucketIndex = this.getBucketIndex(value);
@@ -572,10 +566,8 @@ EH.prototype.delete = function(value)
 EH.prototype.merge = function(currbucketIndex)
 {
 	const currBucket = this.directory[currbucketIndex];
-	console.log(currBucket);
-
 	const currLocalDepth = currBucket.localDepth;
-	console.log(currLocalDepth === 0);
+
 	if (currLocalDepth === 0) 
 		return;
 
@@ -700,14 +692,11 @@ EH.prototype.merge = function(currbucketIndex)
 
 	this.halveDirectory();
 
-	console.log(targetBucket);
-	console.log(`this.directory: ${this.directory}`);
-
 	/* 
 	 * IMPORTANT: Cascading merge.
 	 * Recursively use the targetBucket as current bucket to start merging again.
 	 */
-	// TODO
+
 	// We need to find an index pointing to targetBucket
 	let targetBucketIdx = null;
 	for (let ind = 0; ind < this.directory.length; ind++) {
