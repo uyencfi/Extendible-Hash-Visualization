@@ -97,6 +97,15 @@ EH.prototype.addControls =  function()
 	this.insertButton.onclick = this.insertCallback.bind(this);
 	this.controls.push(this.insertButton);
 
+	this.deleteField = addControlToAlgorithmBar("Text", "");
+	this.deleteField.onkeydown = this.returnSubmit(this.deleteField, 
+		this.deleteCallback.bind(this), 4, true);
+	this.controls.push(this.deleteField);
+	
+	this.deleteButton = addControlToAlgorithmBar("Button", "Delete");
+	this.deleteButton.onclick = this.deleteCallback.bind(this);
+	this.controls.push(this.deleteButton);
+
 	this.clearButton = addControlToAlgorithmBar("Button", "Clear");
 	this.clearButton.onclick = this.clearCallback.bind(this);
 	this.controls.push(this.clearButton);
@@ -484,10 +493,38 @@ EH.prototype.initDirectory = function() {
 }
 
 /* 
- * ===========================================
- *     End: 		Helper functions 
- * ===========================================
+ * =================================================
+ *     End: 		Helper functions for Insertion 
+ * =================================================
  */
+
+
+EH.prototype.deleteCallback = function(event)
+{
+	var deletedValue = this.deleteField.value;
+	if (deletedValue === "") return;
+	
+	this.deleteField.value = "";
+	this.implementAction(this.delete.bind(this), deletedValue);
+}
+
+EH.prototype.delete = function(value) 
+{
+	this.commands = [];
+	if (!this.directory) return this.commands;
+
+	const bucketIndex = this.getBucketIndex(value);
+	const bucket = this.directory[bucketIndex];
+	
+	if (!bucket.data.includes(value)) {
+		this.setExplain(`Element ${value} not found`);
+		return this.commands;
+	}
+	
+	this.setExplain(`Deleting ${value}...`);
+	return this.commands;		// TODO	
+}
+
 
 EH.prototype.clearCallback = function(event)
 {
