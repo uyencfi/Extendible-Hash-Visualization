@@ -258,14 +258,16 @@ AnimatedObject.prototype.getClosestCardinalPoint = function(fromX, fromY)
 		yPos = this.centerY();
 	}
 			
-	if (yDelta > xDelta)
-	{
-		xPos = this.centerX();
-	}
-	else 
-	{
-		yPos  = this.centerY();
-	}
+	// if (yDelta > xDelta)
+	// {
+	// 	xPos = this.centerX();
+	// }
+	// else 
+	// {
+	// 	yPos  = this.centerY();
+	// }
+	// TODO Hacky way to prevent arrows from pointing to middle of LinkedListNode
+	yPos = this.centerY();
 
 	return [xPos, yPos];
 }
