@@ -3,6 +3,9 @@
 [Extendible Hashing](https://en.wikipedia.org/wiki/Extendible_hashing) powers the indexing structures of many DBMS.
 This visualization demonstrates how this scheme dynamically manages data storage, including bucket splitting, directory expansion, and bucket merging.
 
+Available at https://uyencfi.github.io/Extendible-Hash-Visualization/
+
+
 ## Running locally
 The visualization works by using an HTML file for animation, and JavaScript for handling the insertion/deletion events.
 ```bash
