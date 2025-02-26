@@ -27,7 +27,7 @@
 const MIN_BUCKET_CAPACITY = 2;
 
 
-const DIRECTORY_X_START = 200;
+const DIRECTORY_X_START = 250;
 const DIRECTORY_Y_START = 40;
 
 const DIRECTORY_WIDTH = 30;
@@ -43,6 +43,8 @@ const BUCKET_HEIGHT = DIRECTORY_HEIGHT - 5;
 
 const COLOR_BLUE = "#0000FF";
 const COLOR_BLACK = "#000000";
+const COLOR_GREEN = "#EEFFEE";
+const COLOR_WHITE = "#FFFFFF";
 
 function EH(am, w, h)
 {
@@ -202,6 +204,13 @@ EH.prototype.getBucketWidth = function() {
 	return BUCKET_WIDTH_PER_ENTRY * this.BUCKET_CAPACITY;
 }
 
+EH.prototype.toggleHighlight = function(dir, buc, v) {
+	this.cmd("SetHighlight", dir, v);
+	this.cmd("SetEdgeHighlight", dir, buc, v);
+	this.cmd("SetHighlight", buc, v);
+	this.cmd("Step");
+}
+
 EH.prototype.insertCallback = function(event)
 {
 	// Get value to insert from textfield (created in addControls above)
@@ -230,24 +239,17 @@ EH.prototype.insertRecursive = function(value)
 {
 	this.setExplain(`Inserting element: ${value}.\nBinary ${parseInt(value).toString(2)}`);
 
-	const toggleHighlight = (dir, buc, v) => {
-		this.cmd("SetHighlight", dir, v);
-		this.cmd("SetEdgeHighlight", dir, buc, v);
-		this.cmd("SetHighlight", buc, v);
-		this.cmd("Step");
-	}
-
 	const bucketIndex = this.getBucketIndex(value);
 	const bucket = this.directory[bucketIndex];
 	const dirEntryId = this.directoryGraphics[bucketIndex][0];
 	
 	// Turn on highlights
-	toggleHighlight(dirEntryId, bucket.graphicId, 1);
+	this.toggleHighlight(dirEntryId, bucket.graphicId, 1);
 
 	if (bucket.isFull()) {
 		console.log("oops full!");
 		this.setExplain("Bucket is full");
-		toggleHighlight(dirEntryId, bucket.graphicId, 0);
+		this.toggleHighlight(dirEntryId, bucket.graphicId, 0);
 		
 		if (bucket.localDepth === this.globalDepth) {
 			this.doubleDirectory();
@@ -265,7 +267,7 @@ EH.prototype.insertRecursive = function(value)
 	this.cmd("Step");
 
 	// Turn off the highlights
-	toggleHighlight(dirEntryId, bucket.graphicId, 0);
+	this.toggleHighlight(dirEntryId, bucket.graphicId, 0);
 	this.cmd("SetText", this.explainLabel, "");
 }
 
@@ -508,22 +510,280 @@ EH.prototype.deleteCallback = function(event)
 	this.implementAction(this.delete.bind(this), deletedValue);
 }
 
+
+/* 
+ * Delete:  Removes value if found.
+ *					Calls merge() to check for possible bucket merge.
+ */
 EH.prototype.delete = function(value) 
 {
 	this.commands = [];
 	if (!this.directory) return this.commands;
 
+	console.log(`START DELETE: ${this.directory}`);
+	console.log(this.directoryGraphics);
+
+	this.setExplain(`Deleting ${value}`);
+
 	const bucketIndex = this.getBucketIndex(value);
 	const bucket = this.directory[bucketIndex];
+	const dirEntryId = this.directoryGraphics[bucketIndex][0];
+	const indexInBucket = bucket.data.indexOf(value);
+
+	// Turn on highlight
+	this.toggleHighlight(dirEntryId, bucket.graphicId, 1);
 	
-	if (!bucket.data.includes(value)) {
+	if (indexInBucket === -1) {
 		this.setExplain(`Element ${value} not found`);
+		this.toggleHighlight(dirEntryId, bucket.graphicId, 0);
 		return this.commands;
 	}
 	
-	this.setExplain(`Deleting ${value}...`);
-	return this.commands;		// TODO	
+	// Remove the entry
+	bucket.data.splice(indexInBucket, 1);
+	this.cmd("SetTextColor", bucket.graphicId, COLOR_BLUE, indexInBucket);
+	this.cmd("SetText", bucket.graphicId, "", indexInBucket);
+	this.cmd("SetTextColor", bucket.graphicId, COLOR_BLACK, indexInBucket);
+	this.cmd("Step");
+
+	// "Compress" the remaining entries by 1 slot,
+	// starting from the position of deletion 'indexInBucket'.
+	for (let i = indexInBucket; i < bucket.data.length; i++) {
+		const entry = bucket.data[i];
+		this.cmd("SetText", bucket.graphicId, entry, i);
+	}
+	this.cmd("SetText", bucket.graphicId, "", bucket.data.length);	// Set empty for the last slot.
+	this.cmd("Step");
+
+	// Turn off the highlight
+	this.toggleHighlight(dirEntryId, bucket.graphicId, 0);
+
+	/* Check if bucket can be merged. */
+	this.merge(bucketIndex);
+
+	return this.commands;
 }
+
+
+/*
+ * Merge:		Merges the current bucket if possible.
+ * 					Calls halveDirectory() to check if directory can be shrunk.
+ */
+EH.prototype.merge = function(currbucketIndex)
+{
+	const currBucket = this.directory[currbucketIndex];
+	console.log(currBucket);
+
+	const currLocalDepth = currBucket.localDepth;
+	console.log(currLocalDepth === 0);
+	if (currLocalDepth === 0) 
+		return;
+
+	const mask = (1 << currLocalDepth) - 1;		// Last (localDepth) bits
+	const curBits = currbucketIndex & mask;
+	// Flip the leftmost bit
+	// to obtain the bits of the bucket that can *potentially* be merged with.
+	const targetBits = curBits ^ (1 << (currLocalDepth-1));
+
+	const isSameLocalDepth = (i) => 
+		currLocalDepth === this.directory[i].localDepth;
+	const canFit = (i) =>
+		currBucket.data.length + this.directory[i].data.length <= this.BUCKET_CAPACITY;
+
+	let targetBucket; 
+	for (let i = 0; i < this.directory.length; i++) {
+		if ( (i & mask)===targetBits && isSameLocalDepth(i) && canFit(i) ) {
+			targetBucket = this.directory[i];
+			break;
+		}
+	}
+
+	if (!targetBucket) {
+		this.setExplain("No more possible bucket merge. Done.");
+		return;
+	}
+
+	this.setExplain("Merging with highlighted bucket...");
+
+	// Collect all directory indices pointing to
+	// the current and target bucket.
+	// Note: Inefficient, but easy to understand.
+	var currDirEntries = [];
+	var targetDirEntries = [];
+	for (let i = 0; i < this.directory.length; i++) {
+		if (this.directory[i] === currBucket) {
+			currDirEntries.push(i);
+		}
+		else if (this.directory[i] === targetBucket) {
+			targetDirEntries.push(i);
+		}
+	}
+
+	/*   1. GRAPHIC SIDE    */
+
+	// Set color for current bucket and its set of directory entries
+	this.cmd("SetBackgroundColor", currBucket.graphicId, COLOR_GREEN);
+	for (const idx of currDirEntries) {
+		this.cmd("SetBackgroundColor", this.directoryGraphics[idx][0], COLOR_GREEN);
+	}
+	this.cmd("Step");
+
+	// Set highlight for target bucket and its directory entries
+	this.cmd("SetHighlight", targetBucket.graphicId, 1);
+	this.cmd("Step");
+	for (const idx of targetDirEntries) {
+		this.cmd("SetHighlight", this.directoryGraphics[idx][0], 1);
+	}
+	this.cmd("Step");
+
+	// Then, turn off highlighting for the target's directory entries,
+	// but keep highlighting the target bucket
+	for (const idx of targetDirEntries) {
+		this.cmd("SetHighlight", this.directoryGraphics[idx][0], 0);
+	}
+	this.cmd("Step");
+
+	// Move entries from curr to target, setting color for each entry being moved
+	const originalTargetLen = targetBucket.data.length;
+	for (let j = 0; j < currBucket.data.length; j++) {
+		this.cmd("SetTextColor", currBucket.graphicId, COLOR_BLUE, j);
+		this.cmd("Step");
+		this.cmd("SetText", currBucket.graphicId, "", j);
+		this.cmd("SetText", targetBucket.graphicId, currBucket.data[j], j + originalTargetLen);
+		this.cmd("SetTextColor", targetBucket.graphicId, COLOR_BLUE, j + originalTargetLen);
+		this.cmd("Step");
+	}
+	// Turn off color after movement is done
+	for (let j = 0; j < currBucket.data.length; j++) {
+		this.cmd("SetTextColor", targetBucket.graphicId, COLOR_BLACK, j + originalTargetLen);		
+	}
+	this.cmd("Step");
+
+	// Set highlight for pointers to be changed
+	for (const idx of currDirEntries) {
+		this.cmd("SetEdgeHighlight", this.directoryGraphics[idx][0], currBucket.graphicId, 1);
+	}
+	this.cmd("Step");
+
+	// Then, disconnect & connect to target bucket & highlight new edge
+	for (const idx of currDirEntries) {
+		this.cmd("Disconnect", this.directoryGraphics[idx][0], currBucket.graphicId);
+		this.cmd("Connect", this.directoryGraphics[idx][0], targetBucket.graphicId);
+		this.cmd("SetEdgeHighlight", this.directoryGraphics[idx][0], targetBucket.graphicId, 1);
+	}
+	this.cmd("Step");
+
+	// Finally, turn off highlight for target bucket and new edges 
+	this.cmd("SetHighlight", targetBucket.graphicId, 0);
+	for (const idx of currDirEntries) {
+		this.cmd("SetEdgeHighlight", this.directoryGraphics[idx][0], targetBucket.graphicId, 0);
+	}
+	// And, delete old bucket
+	this.cmd("Delete", currBucket.graphicId);
+
+	// And, remove color of changed directory entries
+	for (const idx of currDirEntries) {
+		this.cmd("SetBackgroundColor", this.directoryGraphics[idx][0], COLOR_WHITE);
+	}
+	this.cmd("Step");
+	
+	/*   2. LOGIC SIDE    */
+
+	// Merge entries
+	targetBucket.data = targetBucket.data.concat(currBucket.data);
+	// Update pointers
+	for (const idx of currDirEntries) {
+		this.directory[idx] = targetBucket;
+	}
+	// Decrement targetBucket's local depth!!
+	targetBucket.localDepth--;
+
+	this.halveDirectory();
+
+	console.log(targetBucket);
+	console.log(`this.directory: ${this.directory}`);
+
+	/* 
+	 * IMPORTANT: Cascading merge.
+	 * Recursively use the targetBucket as current bucket to start merging again.
+	 */
+	// TODO
+	// We need to find an index pointing to targetBucket
+	let targetBucketIdx = null;
+	for (let ind = 0; ind < this.directory.length; ind++) {
+		if (this.directory[ind] === targetBucket) {
+			targetBucketIdx = ind;
+			break;
+		}
+	}
+	if (targetBucketIdx === null)	
+		throw new Error("Target bucket index not found");
+	
+	this.merge(targetBucketIdx);
+}
+
+
+/*
+ * HalveDirectory:	If each pair of corresponding entries 
+ *									point to the same bucket, directory is halved.
+ *									Global depth is decremented by one.
+ */
+EH.prototype.halveDirectory = function() 
+{
+	if (this.globalDepth === 0) 
+		return;
+	
+	let canHalve = true;
+	const halfLength = this.directory.length / 2;
+	
+	for (let i = 0; i < halfLength; i++) {
+		if (this.directory[i] !== this.directory[i + halfLength]) {
+			canShrink = false;
+			break;
+		}
+	}
+
+	if (!canHalve)
+		return;
+
+	this.setExplain("Halve the directory");
+	
+	// Remove directory entries
+	for (let i = halfLength; i < this.directoryGraphics.length; i++) {
+		const [dirEntryId, labelId] = this.directoryGraphics[i];
+		this.cmd("Delete", dirEntryId);
+		this.cmd("Delete", labelId);
+	}
+
+	// Re-number the labels
+	for (let i = 0; i < halfLength; i++) {
+		const labelId = this.directoryGraphics[i][1];
+		this.cmd("SetText", labelId, parseInt(i).toString(2).padStart(this.globalDepth-1, "0"));
+	}
+	this.cmd("Step");
+
+	// Re-align the buckets
+	var seen = new Set();
+	for (let i = 0; i < halfLength; i++) {
+		const bucket = this.directory[i];
+		if (seen.has(bucket.graphicId))
+		{
+			continue;
+		}
+		seen.add(bucket.graphicId);
+		var newY = BUCKET_Y_START + i * DIRECTORY_HEIGHT;
+		if (newY != bucket.y) 
+		{
+			bucket.y = newY;
+			this.cmd("Move", bucket.graphicId, bucket.x, newY);
+		}
+	}
+	this.cmd("Step");
+
+	this.directory.length = halfLength;
+	this.globalDepth--;
+}
+
 
 
 EH.prototype.clearCallback = function(event)
