@@ -97,6 +97,10 @@ EH.prototype.addControls =  function()
 	this.insertButton.onclick = this.insertCallback.bind(this);
 	this.controls.push(this.insertButton);
 
+	this.clearButton = addControlToAlgorithmBar("Button", "Clear");
+	this.clearButton.onclick = this.clearCallback.bind(this);
+	this.controls.push(this.clearButton);
+
 	this.bucketCapacityButtons = addRadioButtonGroupToAlgorithmBar(
 		[
 			"Entries per bucket: 2",		// MIN_BUCKET_CAPACITY
@@ -161,6 +165,7 @@ EH.prototype.changeBucketCapacity = function(newCapacity)
 
 	this.BUCKET_CAPACITY = newCapacity;
 	this.directory = null;
+	this.nextIndex = 1;
 
 	return this.commands;
 }
@@ -483,6 +488,20 @@ EH.prototype.initDirectory = function() {
  *     End: 		Helper functions 
  * ===========================================
  */
+
+EH.prototype.clearCallback = function(event)
+{
+	this.implementAction(this.clear.bind(this), "");
+}
+
+EH.prototype.clear = function() 
+{
+	this.commands = [];
+	this.clearAllGraphics();
+	this.directory = null;
+	this.nextIndex = 1;
+	return this.commands;
+}
 
 
 var currentAlg;
