@@ -74,7 +74,7 @@ EH.prototype.setup = function ()
 	this.explainLabel = this.nextIndex++;
 
 	this.commands = [];
-	this.cmd("CreateLabel", this.explainLabel, "initial state", 60, 30);
+	this.cmd("CreateLabel", this.explainLabel, "initial state", 30, 30, 0);
 
 	this.animationManager.StartNewAnimation(this.commands);
 	this.animationManager.skipForward();
@@ -155,7 +155,7 @@ EH.prototype.changeBucketCapacity = function(newCapacity)
 {
 	this.commands = [];
 	this.bucketCapacityButtons[newCapacity - MIN_BUCKET_CAPACITY].checked = true;
-	this.setExplain(`Now storing \n ${newCapacity} entries per bucket`);
+	this.setExplain(`Now storing ${newCapacity} entries per bucket`);
 	this.insertField.value = "";
 	this.clearAllGraphics();
 
