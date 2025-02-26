@@ -1,9 +1,9 @@
 @charset "utf-8";
 
 
-body {
+body 
+{
 	font: 100% Verdana, Arial, Helvetica, sans-serif;
-	/*background: #666666; */
 	margin: 0; /* it's good practice to zero the margin and padding of the body element to account for differing browser defaults */
 	padding: 0;
 	text-align: center; /* this centers the container in IE 5* browsers. The text is then set to the left aligned default in the #container selector */
@@ -11,27 +11,63 @@ body {
 }
 
 
+.VisualizationMainPage #container 
+{
+	background: #FFFFFF;
+	margin: 0 auto; /* the auto margins (in conjunction with a width) center the page */
+	text-align: left; /* this overrides the text-align: center on the body element. */
+}	
 
 
-.VisualizationMainPage #mainContent {
+.VisualizationMainPage  #header 
+{ 
+	background: #003D7C; 
+	color:#EF7C00;
+	padding: 0 10px 0 20px; 
+  
+} 
+
+.VisualizationMainPage #header h1 
+{
+	margin: 0; 
+	padding: 10px 0; 
+}
+
+
+.VisualizationMainPage #mainContent 
+{
 	/*padding: 0 20px; /* remember that padding is the space inside the div box and margin is the space outside the div box */
 	background: #FFFFFF;
 }
 
 
-
-.VisualizationMainPage #container {
-
-
+/* 
+.VisualizationMainPage #mainContent h1 
+{
+	padding: 0 20px; 
 	background: #FFFFFF;
-	/*margin: 0 auto; /* the auto margins (in conjunction with a width) center the page */
-	text-align: left; /* this overrides the text-align: center on the body element. */
+	color:#006633
 }
+
+.VisualizationMainPage #mainContent h2 
+{
+	padding: 0 20px; 
+	background: #FFFFFF;
+	color:#006633
+}
+
+.VisualizationMainPage #mainContent h3 
+{
+	padding: 0 20px; 
+	background: #FFFFFF;
+	color:#006633
+} 
+*/
 
 
 .VisualizationMainPage #algoControlSection
 {
-	background: #DDEEDD; 
+	background: #e0f0ff; 
 	color:#000000; 
 
 }
@@ -39,83 +75,33 @@ body {
 
 .VisualizationMainPage #generalAnimationControlSection
 {
-	background: #DDEEDD; 
-	color:#006600; 
-
-}
-
-.VisualizationMainPage  #header { 
-	background: #006633; 
-	color:#ffCC33;
-	padding: 0 10px 0 20px; 
-  
-} 
- 
-.VisualizationMainPage #header  A:visited 
-	  { text-decoration:none;
-        color:#ffCC33; 
-	   }
-	   
-	   
-.VisualizationMainPage #header h1 {
-	margin: 0; 
-	padding: 10px 0; 
-	}
-	   
-.VisualizationMainPage #header A:link {
-    text-decoration:none;
-    color:#ffCC33;
-	}
-	
-	
-.VisualizationMainPage #container {
-	background: #FFFFFF;
-	margin: 0 auto; /* the auto margins (in conjunction with a width) center the page */
-	text-align: left; /* this overrides the text-align: center on the body element. */
-}	
-	
-	
-.VisualizationMainPage #footer  A:visited { text-decoration:none;
-        color:ffcc33; 
-}
-
-.VisualizationMainPage #footer A:link {
-    text-decoration:none;
-	color:#ffCC33;
+	background: #e0f0ff; 
 }
 
 
-	
-
-.VisualizationMainPage #mainContent h1{
-	padding: 0 20px; 
-	background: #FFFFFF;
-	color:#006633
-}
-
-.VisualizationMainPage #mainContent h2{
-	padding: 0 20px; 
-	background: #FFFFFF;
-	color:#006633
-}
-
-.VisualizationMainPage #mainContent h3{
-	padding: 0 20px; 
-	background: #FFFFFF;
-	color:#006633
-}
-
-
-
-.VisualizationMainPage #footer { 
+.VisualizationMainPage #footer 
+{ 
 	padding: 0 10px;
-    background: #006633; 
-	color:#ffcc33;
-} 
-.VisualizationMainPage #footer p {
-	margin: 0; 	padding: 10px 0; 
+  background: #003D7C; 
+	color:#EF7C00;
 }
 
-EM {text-decoration: bold;}
+
+.VisualizationMainPage #footer  a 
+{ 
+  color: #EF7C00; 
+}
+
+
+.VisualizationMainPage #footer  p 
+{
+	margin: 0; 	
+	padding: 10px 0; 
+}
+
+EM 
+{
+	text-decoration: bold;
+}
 
 	

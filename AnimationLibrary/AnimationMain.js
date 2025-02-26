@@ -222,7 +222,7 @@ function doPlayPause()
 	paused = !paused;
 	if (paused)
 	{
-		playPauseBackButton.setAttribute("value", "play");
+		playPauseBackButton.setAttribute("value", "Play");
 		if (skipBackButton.disabled == false)
 		{
 			stepBackButton.disabled = false;		
@@ -231,7 +231,7 @@ function doPlayPause()
 	}
 	else
 	{
-		playPauseBackButton.setAttribute("value", "pause");	
+		playPauseBackButton.setAttribute("value", "Pause");	
 	}
 	animationManager.SetPaused(paused);
 }
@@ -288,7 +288,7 @@ function initCanvas()
 	objectManager = new ObjectManager();
 	animationManager = new AnimationManager(objectManager);
 	
-	skipBackButton = addControlToAnimationBar("Button", "Skip Back");
+	skipBackButton = addControlToAnimationBar("Button", "Undo");
 	skipBackButton.onclick = animationManager.skipBack.bind(animationManager);
 	stepBackButton = addControlToAnimationBar("Button", "Step Back");
 	stepBackButton.onclick = animationManager.stepBack.bind(animationManager);
@@ -296,7 +296,7 @@ function initCanvas()
 	playPauseBackButton.onclick = doPlayPause ;
 	stepForwardButton = addControlToAnimationBar("Button", "Step Forward");
 	stepForwardButton.onclick = animationManager.step.bind(animationManager) ;
-	skipForwardButton = addControlToAnimationBar("Button", "Skip Forward");
+	skipForwardButton = addControlToAnimationBar("Button", "Fast Forward");
 	skipForwardButton.onclick = animationManager.skipForward.bind(animationManager);
 	
 	
