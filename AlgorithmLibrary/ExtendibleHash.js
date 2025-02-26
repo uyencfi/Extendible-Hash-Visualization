@@ -814,3 +814,36 @@ function init()
 	currentAlg = new EH(animManag, canvas.width, canvas.height);
 	
 }
+
+// ===============================
+//          BUCKET class
+// ===============================
+class Bucket {
+  static nameCounter = -1;
+  static getName() {    // For easier debugging
+    this.nameCounter++;
+    return String.fromCharCode('A'.charCodeAt(0) + this.nameCounter);
+  }
+
+  constructor(graphicId, localDepth, capacity) {
+    this.name = Bucket.getName();
+    this.localDepth = localDepth;
+    this.capacity = capacity;
+    this.data = [];
+    this.graphicId = graphicId;
+    this.x = -1;    // X and Y coordinates of the graphic
+    this.y = -1;
+  }
+  
+  toString() {
+    return `Bucket {name: ${this.name}, localDepth: ${this.localDepth}, data: [${this.data.join(', ')}], graphicId: ${this.graphicId}}`;
+  }
+
+  isFull() {
+    return this.data.length === this.capacity;
+  }
+
+  insert(value) {
+    this.data.push(value);
+  }
+}
