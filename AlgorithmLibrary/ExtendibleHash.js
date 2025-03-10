@@ -567,6 +567,8 @@ EH.prototype.delete = function(value)
 /*
  * Merge:		Merges the current bucket if possible.
  * 					Calls halveDirectory() to check if directory can be shrunk.
+ * 					Merge operation is cascading; note the recursive call 
+ * 					at the end of the function.
  */
 EH.prototype.merge = function(currbucketIndex)
 {
@@ -662,21 +664,33 @@ EH.prototype.merge = function(currbucketIndex)
 	}
 	this.cmd("Step");
 
-	// Then, disconnect & connect to target bucket & highlight new edge
+	// Disconnect & connect to target bucket & highlight new edge
 	for (const idx of currDirEntries) {
 		this.cmd("Disconnect", this.directoryGraphics[idx][0], currBucket.graphicId);
 		this.cmd("Connect", this.directoryGraphics[idx][0], targetBucket.graphicId);
 		this.cmd("SetEdgeHighlight", this.directoryGraphics[idx][0], targetBucket.graphicId, 1);
 	}
 	this.cmd("Step");
+	
+	// Delete old bucket
+	this.cmd("Delete", currBucket.graphicId);
+	this.cmd("Step");
+
+	// Move target bucket to a nicer position, aligning with the first directory entry pointing to it.
+	// This step is very important!! It ensures that bucket graphics will not overlap.
+	const minEntry = Math.min(...currDirEntries, ...targetDirEntries);
+	const y = BUCKET_Y_START + minEntry * (DIRECTORY_HEIGHT);
+	if (y !== targetBucket.y) {
+		targetBucket.y = y;
+		this.cmd("Move", targetBucket.graphicId, targetBucket.x, targetBucket.y);
+		this.cmd("Step");		
+	}
 
 	// Finally, turn off highlight for target bucket and new edges 
 	this.cmd("SetHighlight", targetBucket.graphicId, 0);
 	for (const idx of currDirEntries) {
 		this.cmd("SetEdgeHighlight", this.directoryGraphics[idx][0], targetBucket.graphicId, 0);
 	}
-	// And, delete old bucket
-	this.cmd("Delete", currBucket.graphicId);
 
 	// And, remove color of changed directory entries
 	for (const idx of currDirEntries) {
