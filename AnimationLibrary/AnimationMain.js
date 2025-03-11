@@ -282,6 +282,31 @@ function addControlToAnimationBar(type,name,containerType)
 }
 
 
+/**
+ * Adjusts the canvas size to fit the device's pixel ratio.
+ * This helps to resolve blurry drawings inside the canvas.
+ * Pass NULL for the dimension that does not need resizing.
+ * @see https://stackoverflow.com/questions/15661339/how-do-i-fix-blurry-text-in-my-html5-canvas
+ * @param canvas The HTML canvas element
+ */
+function adjustHiPPICanvas(canvas, logicalWidth, logicalHeight) {
+	if (!logicalWidth && !logicalHeight)
+		return;
+
+	const ratio = window.devicePixelRatio;
+	if (logicalWidth) {
+		canvas.width = ratio * logicalWidth;
+		canvas.style.width = logicalWidth + "px";
+	}
+	if (logicalHeight) {
+		canvas.height = ratio * logicalHeight;
+		canvas.style.height = logicalHeight + "px";
+	}
+	
+	canvas.getContext("2d").scale(ratio, ratio);
+}
+
+
 function initCanvas()
 {
 	canvas =  document.getElementById("canvas");
@@ -396,9 +421,18 @@ function initCanvas()
 	    reorderSibling(document.getElementById('canvas'), document.getElementById('generalAnimationControlSection'));
 	}
 
-	canvas.width = width;
-	canvas.height = height;
-	
+	/* 
+	 * Important to distinguish the LOGICAL pixel value in CSS/HTML 
+	 * with the ACTUAL pixel value used for rendering by the device.
+	 * 
+	 * The user should only know about and change the LOGICAL pixel;
+	 * the scaling into actual pixels should be abstracted away.
+	 * 
+	 * See: https://web.dev/articles/canvas-hidipi
+	 */
+	canvas.logical_width = width;
+	canvas.logical_height = height;
+	adjustHiPPICanvas(canvas, width, height);
 	
 	
 	tableEntry = document.createElement("td");
@@ -407,7 +441,7 @@ function initCanvas()
 	controlBar.appendChild(tableEntry);
 
 
-	widthEntry = addControlToAnimationBar("Text", canvas.width);
+	widthEntry = addControlToAnimationBar("Text", canvas.logical_width);
 	widthEntry.size = 4;
 	widthEntry.onkeydown = this.returnSubmit(widthEntry, animationManager.changeSize.bind(animationManager), 4, true);
 
@@ -417,11 +451,11 @@ function initCanvas()
 	tableEntry.appendChild(txtNode);
 	controlBar.appendChild(tableEntry);
 	
-	heightEntry = addControlToAnimationBar("Text", canvas.height);
+	heightEntry = addControlToAnimationBar("Text", canvas.logical_height);
 	heightEntry.onkeydown = this.returnSubmit(heightEntry, animationManager.changeSize.bind(animationManager), 4, true);
 
 //	heightEntry.size = 4;
-	sizeButton = addControlToAnimationBar("Button", "Change Canvas Size");
+	sizeButton = addControlToAnimationBar("Button", "Change Canvas Size (>100)");
 	
 	sizeButton.onclick = animationManager.changeSize.bind(animationManager) ;
 	
@@ -434,8 +468,7 @@ function initCanvas()
 	animationManager.addListener("AnimationEnded", this, this.animEnded);
 	animationManager.addListener("AnimationWaiting", this, this.animWaiting);
 	animationManager.addListener("AnimationUndoUnavailable", this, this.anumUndoUnavailable);
-	objectManager.width = canvas.width;
-	objectManager.height = canvas.height;
+
 	return animationManager;
 }
 
@@ -533,27 +566,29 @@ function AnimationManager(objectManager)
 	this.changeSize = function()
 	{
 		
-		var width = parseInt(widthEntry.value);
-		var height = parseInt(heightEntry.value);
-		
-		if (width > 100)
-		{
-			canvas.width = width;
-			this.animatedObjects.width = width;
-			setCookie("VisualizationWidth", String(width), 30);
-			
+		var w = parseInt(widthEntry.value);
+		var h = parseInt(heightEntry.value);
+
+		if (w === canvas.logical_width || w <= 100) {
+			w = null;
+	  } else {
+			canvas.logical_width = w;
+			setCookie("VisualizationWidth", String(w), 30);
 		}
-		if (height > 100)
-		{
-			canvas.height = height;
-			this.animatedObjects.height = height;
-			setCookie("VisualizationHeight", String(height), 30);
+
+		if (h === canvas.logical_height || h <= 100) {
+			h = null;
+		} else {
+			canvas.logical_height = h;
+			setCookie("VisualizationHeight", String(h), 30);
 		}
-		width.value = canvas.width;
-		heightEntry.value = canvas.height;
+
+		adjustHiPPICanvas(canvas, w, h);
+
+		widthEntry.value = canvas.logical_width;
+		heightEntry.value = canvas.logical_height;
 		
 		this.animatedObjects.draw();
-		this.fireEvent("CanvasSizeChanged",{width:canvas.width, height:canvas.height});		
 	}
 	
 	this.startNextBlock = function()
