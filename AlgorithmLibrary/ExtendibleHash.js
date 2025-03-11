@@ -410,7 +410,7 @@ EH.prototype.redistributePointers = function(oldBucketIndex, newBucket)
 	var changedIndices = [];
 	for (let i = 0; i < this.directory.length; i++) {
 		if ((i & mask) === oldBucketBits) {
-			this.directory[i] = this.directory[oldBucketIndex];
+			// Nothing to do here!
 		}
 		if ((i & mask) === newBucketBits) {
 			this.directory[i] = newBucket;
