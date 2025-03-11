@@ -285,25 +285,29 @@ function addControlToAnimationBar(type,name,containerType)
 /**
  * Adjusts the canvas size to fit the device's pixel ratio.
  * This helps to resolve blurry drawings inside the canvas.
- * Pass NULL for the dimension that does not need resizing.
  * @see https://stackoverflow.com/questions/15661339/how-do-i-fix-blurry-text-in-my-html5-canvas
  * @param canvas The HTML canvas element
  */
 function adjustHiPPICanvas(canvas, logicalWidth, logicalHeight) {
-	if (!logicalWidth && !logicalHeight)
-		return;
 
 	const ratio = window.devicePixelRatio;
-	if (logicalWidth) {
-		canvas.width = ratio * logicalWidth;
-		canvas.style.width = logicalWidth + "px";
-	}
-	if (logicalHeight) {
-		canvas.height = ratio * logicalHeight;
-		canvas.style.height = logicalHeight + "px";
-	}
-	
-	canvas.getContext("2d").scale(ratio, ratio);
+
+	const prevW = canvas.width;
+	const prevH = canvas.height;
+
+	canvas.width = ratio * logicalWidth;
+	canvas.style.width = logicalWidth + "px";
+	canvas.height = ratio * logicalHeight;
+	canvas.style.height = logicalHeight + "px";
+
+	// The scale factor is reset only if canvas.width or height has changed.
+	// So if there was no change, then we should not reapply the scaling.
+	if (canvas.width === prevW && canvas.height === prevH 
+				&& ratio === canvas.curr_ratio)
+		return;
+
+	canvas.curr_ratio = ratio;
+	canvas.getContext("2d").scale(ratio, ratio);	
 }
 
 
@@ -569,15 +573,15 @@ function AnimationManager(objectManager)
 		var w = parseInt(widthEntry.value);
 		var h = parseInt(heightEntry.value);
 
-		if (w === canvas.logical_width || w <= 100) {
-			w = null;
+		if (w <= 100) {
+			w = canvas.logical_width;		// Set to current value, i.e. No change
 	  } else {
 			canvas.logical_width = w;
 			setCookie("VisualizationWidth", String(w), 30);
 		}
 
-		if (h === canvas.logical_height || h <= 100) {
-			h = null;
+		if (h <= 100) {
+			h = canvas.logical_height;
 		} else {
 			canvas.logical_height = h;
 			setCookie("VisualizationHeight", String(h), 30);
