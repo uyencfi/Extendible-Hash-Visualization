@@ -251,6 +251,14 @@ EH.prototype.insertRecursive = function(value)
 	// Turn on highlights
 	this.toggleHighlight(dirEntryId, bucket.graphicId, 1);
 
+	// TODO: Implement collision overflow page
+	// For now, reject any insertion that will cause too many collisions.
+	if (bucket.tooManyCollisions(value)) {
+		this.setExplain(`Max number of collisions reached!\nCannot insert another ${value}`);
+		this.toggleHighlight(dirEntryId, bucket.graphicId, 0);
+		return;
+	}
+
 	if (bucket.isFull()) {
 		this.setExplain("Bucket is full");
 		this.toggleHighlight(dirEntryId, bucket.graphicId, 0);
@@ -856,6 +864,12 @@ class Bucket {
   isFull() {
     return this.data.length === this.capacity;
   }
+
+	// Returns true if the bucket already contains `capacity` occurrences of the given value,
+	// and cannot store another one.
+	tooManyCollisions(value) {
+		return this.data.filter(item => item === value).length === this.capacity;
+	}
 
   insert(value) {
     this.data.push(value);
