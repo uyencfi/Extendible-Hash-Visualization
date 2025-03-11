@@ -8,7 +8,7 @@ Available at https://uyencfi.github.io/Extendible-Hash-Visualization/
 ## Properties
  - On an insert operation with overflow, a bucket may be split multiple times. Multiple bucket splits happen when the previous splits did not resolve the overflow (i.e., All data entries either stayed in the old bucket, or all moved to the split image). This ensures that no overflow pages are needed, at the cost of having empty buckets (they are the buckets that were created but did not help resolve the overflow).
 
- - Overflow pages: are not needed. Each bucket access cost is bounded to 1 I/O operations.
+ - Overflow pages: are not needed. Each bucket access cost is bounded to 1 I/O operation.
     - **Except** when there are collisions, and the number of collisions exceed bucket capacity (see below).
 
  - Handling collisions: Collisions are defined as two data entries having the **exact same** hash value. This means that during an overflow, no matter how many times a bucket is split, the collisions will still hash to the same bucket, and overflow can never be resolved. 
